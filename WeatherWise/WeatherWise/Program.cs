@@ -6,6 +6,9 @@ builder.CreateUmbracoBuilder()
     .AddComposers()
     .Build();
 
+builder.Configuration.AddUserSecrets<Program>();
+
+
 WebApplication app = builder.Build();
 
 await app.BootUmbracoAsync();
