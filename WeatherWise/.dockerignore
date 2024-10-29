@@ -1,0 +1,58 @@
+# Visual Studio files
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResults/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio Code
+.vscode/
+
+# Dependencies
+**/packages/
+**/node_modules/
+
+# Environment files
+*.env
+.env
+.env.*
+appsettings.*.json
+!appsettings.json
+
+# Docker
+.docker/
+
+# Git
+.git
+.gitignore
+.gitattributes
+README.md
+LICENSE
+
+# Logs
+logs/
+*.log
+
+# IDE specific files
+*.idea/
+*.vs/
+*.ncrunch*
+*.ReSharper*
