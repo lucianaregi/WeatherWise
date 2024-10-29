@@ -1,4 +1,14 @@
+using WeatherWise.Core.Settings;
+
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
+
+builder.Services.Configure<OpenWeatherSettings>(
+    builder.Configuration.GetSection("OpenWeather"));
 
 // Add services to the container.
 

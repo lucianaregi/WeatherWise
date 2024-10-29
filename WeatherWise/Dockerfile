@@ -1,34 +1,38 @@
-# Estágio de build
+# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
+# Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copiar arquivos de projeto e restaurar dependências
+# Copy project files first for better caching
 COPY ["WeatherWise.Api/WeatherWise.Api.csproj", "WeatherWise.Api/"]
 COPY ["WeatherWise.Core/WeatherWise.Core.csproj", "WeatherWise.Core/"]
 COPY ["WeatherWise.Infrastructure/WeatherWise.Infrastructure.csproj", "WeatherWise.Infrastructure/"]
 RUN dotnet restore "WeatherWise.Api/WeatherWise.Api.csproj"
 
-# Copiar todo o código fonte
+# Copy everything else
 COPY . .
-
-# Publicar a aplicação
 WORKDIR "/src/WeatherWise.Api"
+RUN dotnet build "WeatherWise.Api.csproj" -c Release -o /app/build
+
+# Publish stage
+FROM build AS publish
 RUN dotnet publish "WeatherWise.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-# Estágio final
+# Final stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-EXPOSE 80
-EXPOSE 443
+EXPOSE 8080
+EXPOSE 8081
 
-# Configurar variáveis de ambiente para a aplicação
+# Set environment variables
 ENV ASPNETCORE_ENVIRONMENT=Production
-ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_URLS=http://+:8080
 
-# Copiar arquivos publicados do estágio de build
-COPY --from=build /app/publish .
+# Copy published files
+COPY --from=publish /app/publish .
 
-# Definir o usuário não-root por segurança
+# Use non-root user for security
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "WeatherWise.Api.dll"]
