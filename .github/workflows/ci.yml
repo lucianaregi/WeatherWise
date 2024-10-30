@@ -17,6 +17,7 @@ env:
   DOTNET_VERSION: '8.0.x'
   SOLUTION_PATH: 'WeatherWise.sln'
   API_PROJECT_PATH: 'WeatherWise.Api/WeatherWise.Api.csproj'
+  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
 
 jobs:
   validate:
@@ -62,7 +63,11 @@ jobs:
         fi
 
     - name: Build Docker image
-      run: docker build -f WeatherWise.Api/Dockerfile -t weatherwise:${{ github.sha }} .
+      run: |
+        docker build \
+          --build-arg OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
+          -f WeatherWise.Api/Dockerfile \
+          -t weatherwise:${{ github.sha }} .
 
   create-pr:
     needs: validate
