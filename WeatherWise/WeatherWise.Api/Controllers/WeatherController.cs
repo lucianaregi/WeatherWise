@@ -15,7 +15,7 @@ namespace WeatherWise.Api.Controllers
         public WeatherController(IWeatherService weatherService, ILogger<WeatherController> logger)
         {
             _weatherService = weatherService;
-            _logger = logger;   
+            _logger = logger;
         }
 
         [HttpGet("test")]
