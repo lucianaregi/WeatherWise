@@ -56,7 +56,6 @@ jobs:
       run: dotnet build WeatherWise.sln --configuration Release --no-restore
 
     - name: Build Docker image
-      working-directory: WeatherWise
       run: |
         docker build \
           --build-arg OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
