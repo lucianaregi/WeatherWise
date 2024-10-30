@@ -15,8 +15,8 @@ on:
 
 env:
   DOTNET_VERSION: '8.0.x'
-  SOLUTION_PATH: 'WeatherWise.sln'
-  API_PROJECT_PATH: 'WeatherWise.Api/WeatherWise.Api.csproj'
+  SOLUTION_PATH: 'WeatherWise/WeatherWise.sln'
+  API_PROJECT_PATH: 'WeatherWise/WeatherWise.Api/WeatherWise.Api.csproj'
   OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
 
 jobs:
