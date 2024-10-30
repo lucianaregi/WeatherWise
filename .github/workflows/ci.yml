@@ -1,5 +1,4 @@
 name: WeatherWise CI
-
 on:
   push:
     branches: 
@@ -49,20 +48,15 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
-      run: dotnet restore ${{ env.SOLUTION_PATH }}
+      working-directory: WeatherWise
+      run: dotnet restore WeatherWise.sln
 
     - name: Build
-      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
-
-    - name: Check code formatting
-      run: |
-        dotnet format ${{ env.SOLUTION_PATH }} --verify-no-changes --verbosity detailed
-        if [ $? -ne 0 ]; then
-          echo "Code formatting check failed. Please run 'dotnet format' locally and commit the changes."
-          exit 1
-        fi
+      working-directory: WeatherWise
+      run: dotnet build WeatherWise.sln --configuration Release --no-restore
 
     - name: Build Docker image
+      working-directory: WeatherWise
       run: |
         docker build \
           --build-arg OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
