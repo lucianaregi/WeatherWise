@@ -1,0 +1,106 @@
+name: WeatherWise CI
+
+on:
+  push:
+    branches: 
+      - main
+      - develop
+      - 'feature/**'
+      - 'release/**'
+      - 'hotfix/**'
+  pull_request:
+    branches: 
+      - main
+      - develop
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SOLUTION_PATH: 'WeatherWise.sln'
+  API_PROJECT_PATH: 'WeatherWise.Api/WeatherWise.Api.csproj'
+  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  
+    
+    - name: Validate branch name
+      if: github.event_name == 'pull_request'
+      run: |
+        if [[ "${{ github.base_ref }}" == "main" && "${{ github.head_ref }}" != "develop" ]]; then
+          echo "Error: Pull requests to main branch are only allowed from develop branch"
+          exit 1
+        fi
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_PATH }}
+
+    - name: Build
+      run: dotnet build ${{ env.SOLUTION_PATH }} --configuration Release --no-restore
+
+    - name: Check code formatting
+      run: |
+        dotnet format ${{ env.SOLUTION_PATH }} --verify-no-changes --verbosity detailed
+        if [ $? -ne 0 ]; then
+          echo "Code formatting check failed. Please run 'dotnet format' locally and commit the changes."
+          exit 1
+        fi
+
+    - name: Build Docker image
+      run: |
+        docker build \
+          --build-arg OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
+          -f WeatherWise.Api/Dockerfile \
+          -t weatherwise:${{ github.sha }} .
+
+  create-pr:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Create Pull Request to main
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: '[Automated] Merge develop into main'
+        body: |
+          ## Automated Pull Request
+          
+          This PR was automatically created to merge changes from `develop` into `main`.
+          
+          ### 🔍 Review Checklist
+          - [ ] All tests passing
+          - [ ] Code reviewed
+          - [ ] No breaking changes
+          - [ ] Documentation updated
+          
+          ### 📝 Changes Include
+          - Commits from develop branch
+          
+          Please review and merge if everything looks good.
+        branch: develop
+        base: main
+        labels: |
+          automated-pr
+          ready-for-review
+        draft: false
