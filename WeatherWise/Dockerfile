@@ -1,38 +1,40 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-
-# Copy project files first for better caching
-COPY ["WeatherWise.Api/WeatherWise.Api.csproj", "WeatherWise.Api/"]
-COPY ["WeatherWise.Core/WeatherWise.Core.csproj", "WeatherWise.Core/"]
-COPY ["WeatherWise.Infrastructure/WeatherWise.Infrastructure.csproj", "WeatherWise.Infrastructure/"]
-RUN dotnet restore "WeatherWise.Api/WeatherWise.Api.csproj"
-
-# Copy everything else
-COPY . .
-WORKDIR "/src/WeatherWise.Api"
-RUN dotnet build "WeatherWise.Api.csproj" -c Release -o /app/build
-
-# Publish stage
-FROM build AS publish
-RUN dotnet publish "WeatherWise.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-# Final stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# See https://aka.ms/customizecontainer to learn how to customize your debug container
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+USER app
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Set environment variables
-ENV ASPNETCORE_ENVIRONMENT=Production
+# Configurações de ambiente recomendadas
 ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_RUNNING_IN_CONTAINER=true
 
-# Copy published files
-COPY --from=publish /app/publish .
+# Build Stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS builder
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
 
-# Use non-root user for security
-USER $APP_UID
+# Copiar arquivos de projeto
+COPY ["WeatherWise.Api/WeatherWise.Api.csproj", "WeatherWise.Api/"]
+COPY ["WeatherWise.Core/WeatherWise.Core.csproj", "WeatherWise.Core/"]
+COPY ["WeatherWise.Infrastructure/WeatherWise.Infrastructure.csproj", "WeatherWise.Infrastructure/"]
 
+# Restaurar dependências com log detalhado
+RUN dotnet restore "WeatherWise.Api/WeatherWise.Api.csproj" --verbosity normal
+
+# Copiar todo o código fonte
+COPY . .
+
+# Build e Publish
+WORKDIR "/src/WeatherWise.Api"
+RUN dotnet publish "WeatherWise.Api.csproj" \
+    -c $BUILD_CONFIGURATION \
+    -o /app/publish \
+    --verbosity normal \
+    /p:UseAppHost=false
+
+# Final Stage
+FROM base AS final
+WORKDIR /app
+COPY --from=builder /app/publish .
 ENTRYPOINT ["dotnet", "WeatherWise.Api.dll"]
