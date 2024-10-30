@@ -60,9 +60,9 @@ jobs:
       run: |
         docker build \
           --build-arg OPENWEATHER_API_KEY=${{ secrets.OPENWEATHER_API_KEY }} \
-          -f WeatherWise.Api/Dockerfile \
+          -f Dockerfile \
           -t weatherwise:${{ github.sha }} .
-
+  
   create-pr:
     needs: validate
     runs-on: ubuntu-latest
