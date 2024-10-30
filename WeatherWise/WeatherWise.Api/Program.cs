@@ -44,7 +44,6 @@ builder.Services.Configure<OpenWeatherSettings>(
 builder.Services.AddHttpClient<IWeatherService, WeatherService>();
 
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
