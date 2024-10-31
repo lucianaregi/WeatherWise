@@ -24,6 +24,7 @@ namespace WeatherWise.Api.Controllers
         /// </summary>
         /// <returns>Mensagem de sucesso.</returns>
         [HttpGet("test")]
+        [ResponseCache(Duration = 1800)]
         [SwaggerOperation(Summary = "Testa se o controlador está funcionando.")]
         public IActionResult Test()
         {
@@ -80,6 +81,27 @@ namespace WeatherWise.Api.Controllers
                 _logger.LogError($"Error getting weather for {city}: {ex.Message}");
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+
+        /// <summary>
+        /// Testa o cache do serviço de clima para uma cidade específica.
+        /// </summary>
+        /// <param name="city">Nome da cidade.</param>
+        /// <returns>Resultados das duas chamadas e se são iguais.</returns>
+        [HttpGet("test-cache/{city}")]
+        [SwaggerOperation(Summary = "Testa o cache do serviço de clima para uma cidade específica.")]
+        public async Task<IActionResult> TestCache(string city)
+        {
+            var result1 = await _weatherService.GetCurrentWeatherAsync(city); // Primeira chamada (cache miss)
+            var result2 = await _weatherService.GetCurrentWeatherAsync(city); // Segunda chamada (cache hit)
+
+            return Ok(new
+            {
+                FirstCall = result1,
+                SecondCall = result2,
+                AreSame = ReferenceEquals(result1, result2)
+            });
         }
     }
 }

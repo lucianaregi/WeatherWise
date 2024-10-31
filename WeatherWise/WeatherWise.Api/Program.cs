@@ -38,6 +38,10 @@ builder.Services.AddLogging(logging =>
     logging.AddDebug();
 });
 
+// Configure cache settings
+builder.Services.Configure<CacheSettings>(builder.Configuration.GetSection("CacheSettings"));
+builder.Services.AddMemoryCache();
+
 // Register services
 builder.Services.Configure<OpenWeatherSettings>(
     builder.Configuration.GetSection("OpenWeather"));

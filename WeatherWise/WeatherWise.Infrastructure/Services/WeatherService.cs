@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -14,35 +15,76 @@ namespace WeatherWise.Infrastructure.Services
         private readonly HttpClient _httpClient;
         private readonly OpenWeatherSettings _settings;
         private readonly ILogger<WeatherService> _logger;
+        private readonly IMemoryCache _cache;
+        private readonly CacheSettings _cacheSettings;
 
         public WeatherService(
             HttpClient httpClient,
             IOptions<OpenWeatherSettings> settings,
-            ILogger<WeatherService> logger)
+            IOptions<CacheSettings> cacheSettings,
+            ILogger<WeatherService> logger,
+            IMemoryCache cache)
         {
             _httpClient = httpClient;
             _settings = settings.Value;
+            _cacheSettings = cacheSettings.Value;
             _logger = logger;
+            _cache = cache;
         }
 
         public async Task<WeatherData> GetCurrentWeatherAsync(string city)
         {
+            string cacheKey = $"weather_{city.ToLowerInvariant()}";
+
             try
             {
-                _logger.LogInformation($"Fetching weather data for city: {city}");
+                // Tenta obter do cache
+                if (_cache.TryGetValue(cacheKey, out WeatherData cachedWeather))
+                {
+                    _logger.LogInformation("Cache hit for city: {City}", city);
+                    return cachedWeather;
+                }
+
+                // Se não estiver no cache, busca da API
+                _logger.LogInformation("Cache miss for city: {City}. Fetching from API...", city);
+                var weatherData = await FetchWeatherFromApiAsync(city);
+
+                // Configura as opções do cache
+                var cacheOptions = new MemoryCacheEntryOptions()
+                    .SetAbsoluteExpiration(TimeSpan.FromMinutes(_cacheSettings.AbsoluteExpirationMinutes))
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(_cacheSettings.SlidingExpirationMinutes))
+                    .RegisterPostEvictionCallback((key, value, reason, state) =>
+                    {
+                        _logger.LogDebug("Cache entry {Key} was evicted. Reason: {Reason}", key, reason);
+                    });
+
+                // Armazena no cache
+                _cache.Set(cacheKey, weatherData, cacheOptions);
+                _logger.LogInformation("Data for city {City} cached successfully", city);
+
+                return weatherData;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing weather request for city: {City}", city);
+                throw new Exception($"Error fetching weather data: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<WeatherData> FetchWeatherFromApiAsync(string city)
+        {
+            try
+            {
                 var url = $"{_settings.BaseUrl}/weather?q={city}&appid={_settings.ApiKey}&units={_settings.Units}";
-                _logger.LogInformation($"Calling OpenWeather API");
+                _logger.LogInformation("Calling OpenWeather API for city: {City}", city);
 
                 var response = await _httpClient.GetAsync(url);
-                _logger.LogInformation($"API Response Status: {response.StatusCode}");
-
+                _logger.LogInformation("API Response Status: {StatusCode}", response.StatusCode);
                 response.EnsureSuccessStatusCode();
 
-                // Lê o conteúdo como string para logging
                 var content = await response.Content.ReadAsStringAsync();
-                _logger.LogInformation($"API Response Content: {content}");
+                _logger.LogDebug("API Response Content: {Content}", content);
 
-                // Deserializa a resposta
                 var weatherData = JsonSerializer.Deserialize<WeatherData>(content, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -55,10 +97,15 @@ namespace WeatherWise.Infrastructure.Services
 
                 return weatherData;
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                _logger.LogError($"Error in WeatherService: {ex.Message}");
-                throw new Exception($"Error fetching weather data: {ex.Message}");
+                _logger.LogError(ex, "HTTP request error for city: {City}", city);
+                throw;
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "JSON deserialization error for city: {City}", city);
+                throw;
             }
         }
     }
