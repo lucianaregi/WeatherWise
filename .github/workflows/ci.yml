@@ -101,7 +101,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         # Usar o arquivo de cobertura gerado pelo Coverlet
-        file: ./WeatherWise/WeatherWise/WeatherWise/WeatherWise.Tests/TestResults/coverage/coverage.opencover.xml
+        file: WeatherWise/WeatherWise/WeatherWise/WeatherWise.Tests/TestResults/coverage/coverage.opencover.xml
         # Enviar dados brutos para o Codecov
         flags: codecov
         # Opcional: especificar o nome do repositório
