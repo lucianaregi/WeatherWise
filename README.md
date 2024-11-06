@@ -3,6 +3,7 @@ WeatherWise é uma aplicação web de previsão do tempo que utiliza a API OpenW
 
 ## 🚀 Status
 [![WeatherWise CI](https://github.com/lucianaregi/weatherwise/actions/workflows/ci.yml/badge.svg)](https://github.com/lucianaregi/weatherwise/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/lucianaregi/weatherwise/branch/main/graph/badge.svg)](https://codecov.io/gh/lucianaregi/weatherwise)
 
 ## 🏗️ Estrutura do Projeto
 A solução está organizada seguindo os princípios de Clean Architecture:
@@ -13,13 +14,18 @@ WeatherWise/
 │       └── ci.yml           # Pipeline de CI/CD
 ├── WeatherWise.Api/          # Camada de apresentação e APIs
 ├── WeatherWise.Core/         # Camada de domínio e regras de negócio
-└── WeatherWise.Infrastructure/# Camada de infraestrutura e serviços externos
+├── WeatherWise.Infrastructure/# Camada de infraestrutura e serviços externos
+└── WeatherWise.Tests/        # Testes automatizados
+    ├── Controllers/         # Testes dos controllers
+    ├── Services/           # Testes dos serviços
+    └── Helpers/            # Classes auxiliares para testes
 ```
 
 ### Componentes Principais
 - **WeatherWise.Api**: Controladores e configurações da API
 - **WeatherWise.Core**: Modelos, interfaces e regras de negócio
 - **WeatherWise.Infrastructure**: Implementação de serviços externos
+- **WeatherWise.Tests**: Testes unitários e helpers
 - **.github/workflows**: Configurações de CI/CD
 
 ## 🚀 Tecnologias Utilizadas
@@ -50,6 +56,36 @@ WeatherWise/
   }
 }
 ```
+## 🧪 Testes e Qualidade de Código
+O projeto inclui uma suíte completa de testes automatizados e análise de cobertura de código.
+
+### Estrutura de Testes
+```
+WeatherWise.Tests/
+├── Controllers/
+│   └── WeatherControllerTests.cs    # Testes do controller
+├── Services/
+│   └── WeatherServiceTests.cs       # Testes do serviço
+└── Helpers/
+    └── TestHelpers.cs              # Utilitários para testes
+```
+
+### Executando os Testes
+
+```bash
+# Executar todos os testes
+dotnet test
+
+# Executar testes específicos
+dotnet test --filter "FullyQualifiedName~WeatherControllerTests"
+dotnet test --filter "FullyQualifiedName~WeatherServiceTests"
+
+# Executar com cobertura de código
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+```
+
+### Cobertura de Código
+O projeto utiliza Codecov para análise de cobertura de código. Você pode visualizar os relatórios detalhados em [Codecov Dashboard](https://app.codecov.io/gh/lucianaregi/weatherwise).
 
 ## ⚙️ CI/CD com GitHub Actions
 O projeto utiliza GitHub Actions para automação de CI/CD. O pipeline está configurado em `.github/workflows/ci.yml`:
@@ -80,6 +116,12 @@ jobs:
         dotnet-version: '8.0.x'
     - name: Build
       run: dotnet build
+    - name: Test with coverage
+      run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     - name: Build Docker image
       run: docker build -t weatherwise:latest .
 ```
@@ -91,6 +133,8 @@ jobs:
    
 2. **Processo de CI**:
    - Build automático
+   - Execução de testes
+   - Análise de cobertura de código
    - Construção de imagem Docker
    - Validação de pull requests
 
@@ -98,6 +142,7 @@ jobs:
    - Push para main/develop
    - Pull requests para main/develop
    - Push em branches feature/release/hotfix
+
 
 ## 🛠️ Configuração do Projeto
 
