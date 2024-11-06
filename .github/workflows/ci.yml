@@ -53,8 +53,7 @@ jobs:
       with:
         path: |
           WeatherWise/TestResults
-          WeatherWise/coverage.json
-          WeatherWise/coverage.info
+          WeatherWise/coverage
         key: ${{ runner.os }}-testresults-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-testresults-
@@ -67,32 +66,36 @@ jobs:
       working-directory: WeatherWise
       run: dotnet build WeatherWise.sln --configuration Release --no-restore
 
-    - name: Test
+    - name: Test with coverage
       working-directory: WeatherWise
       run: |
         dotnet test WeatherWise.sln \
           --configuration Release \
           --no-build \
           --verbosity normal \
-          --collect:"XPlat Code Coverage" \
-          --results-directory TestResults \
-          --logger "trx;LogFileName=test-results.trx" \
           /p:CollectCoverage=true \
-          /p:CoverletOutputFormat=lcov \
-          /p:CoverletOutput=./coverage.info
+          /p:CoverletOutput=./TestResults/coverage/ \
+          /p:CoverletOutputFormat=opencover \
+          --results-directory TestResults \
+          --logger "trx;LogFileName=test-results.trx"
 
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: test-results
-        path: WeatherWise/TestResults
+        path: |
+          WeatherWise/TestResults
+          WeatherWise/TestResults/coverage
 
-    - name: Upload coverage report
+    - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
-        files: WeatherWise/coverage.info
-        fail_ci_if_error: true
+        files: ./WeatherWise/TestResults/coverage/coverage.opencover.xml
+        fail_ci_if_error: false
+        verbose: true
 
     - name: Generate test report
       uses: dorny/test-reporter@v1
