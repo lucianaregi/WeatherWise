@@ -1,0 +1,41 @@
+# Configurações básicas do Codecov
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+
+# Configurações de cobertura
+coverage:
+  precision: 2      # Casas decimais nos relatórios
+  round: down       # Arredonda para baixo
+  range: "60...90"  # Faixa de cores no badge
+
+  # Configurações de status
+  status:
+    project:
+      default:
+        target: 60%    # Cobertura mínima desejada
+        threshold: 10%   # Permite uma queda de até 5%
+        # if_ci_failed: error
+    
+    # Configurações para novos códigos em PRs
+    patch:
+      default:
+        target: 50%    # Cobertura mínima para código novo
+        threshold: 20%  # Mais flexível para código novo
+
+# Ignorar arquivos/pastas específicos
+ignore:
+  - "WeatherWise.Tests/**/*"    # Ignora pasta de testes
+  - "**/Program.cs"             # Ignora arquivo de inicialização
+  - "**/Startup.cs"             # Ignora arquivo de configuração
+  - "**/*.Designer.cs"          # Ignora arquivos gerados
+  - "**/Migrations/**"          # Ignora migrações do EF
+
+# Comentários em Pull Requests
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false  # Se deve comentar mesmo sem mudanças
+  require_base: false
+  require_head: true
