@@ -96,13 +96,18 @@ jobs:
           WeatherWise/TestResults/coverage
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v2
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
-        files: ./WeatherWise/TestResults/coverage/coverage.opencover.xml
-        fail_ci_if_error: false
-        verbose: true
+        # Usar o arquivo de cobertura gerado pelo Coverlet
+        file: ./WeatherWise/TestResults/coverage/coverage.opencover.xml
+        # Enviar dados brutos para o Codecov
+        flags: codecov
+        # Opcional: especificar o nome do repositório
+        name: weatherwise
+        # Opcional: especificar o commit SHA
+        commit: ${{ github.sha }}
 
     - name: Generate test report
       uses: dorny/test-reporter@v1
